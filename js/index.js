@@ -39,20 +39,22 @@ class StateMachine {
 		stackOfMachines.push(this);
 		let currentState = this.state;
 		let actions = this.states[currentState];
-		this.runAction('onExit');
 		if (this.runAction(transaction, actions.on, event)) {
 			let service = actions.on[transaction].service;
 			if (service !== undefined) {
 				service(event)
 			}
+
+			this.runAction('onExit');
+
 			if ('target' in actions.on[transaction]) {
 				let newState = actions.on[transaction].target;
-				useState()[1](newState);;
+				useState()[1](newState);
 			}
 		} else {
 			console.log('[error] there is no transaction: ' + transaction + ' in ' + currentState + ' state')
 		}
-		stackOfMachines.pop();
+		return stackOfMachines.pop();
 	}
 }
 
@@ -77,16 +79,10 @@ const useState = function () {
 
 
 
-//------------------------------------------TEST------------------------------------------
-
 const citySelectorMachine = machine({
 	id: 'select',
 	initialState: 'initial',
 	context: {
-		citySelector: document.querySelector('.modal-form_city_selector'),
-		selectorList: document.querySelector('.modal-form_selector_list'),
-		containerRadios: document.querySelector('.modal-form_country_radios'),
-		focusElement: document.querySelector('.modal-form_selector_list'),
 		suggestList: [],
 		filter: ''
 	},
@@ -95,36 +91,9 @@ const citySelectorMachine = machine({
 			on: {
 				GETDATA: {
 					service: (event) => {
-						let xhr = new XMLHttpRequest();
-						xhr.open('GET', event.url, true);
-						xhr.send();
-
-						const [context, setContext] = useContext();
-						const [state, setState] = useState();
-						stackOfMachines.push(stackOfMachines[stackOfMachines.length - 1]);
-
-						xhr.onload = function() {
-							if (xhr.status != 200) {
-								alert(xhr.status + ': ' + xhr.statusText);
-								stackOfMachines.pop()
-							} else {
-								context.data=JSON.parse(xhr.responseText);
-								let newLabel;
-								for (let i = 0; i < context.data.length; i++) {
-									newLabel = document.createElement('label');
-									newLabel.setAttribute('for', i);
-									newLabel.setAttribute('style', 'width: 200px')
-									newLabel.innerHTML = '<input type="radio" name="country"'
-										+ 'id=' + i + ' /> ' + context.data[i].name;
-									context.containerRadios.appendChild(newLabel);
-								}
-								let radioBtn = document.getElementById('0');
-								radioBtn.setAttribute('checked', 'checked');
-								setState('readyToUsage');
-								stackOfMachines.pop();
-							}
-						};
-					}
+						useContext()[1](event);
+					},
+					target: 'readyToUsage'
 				}
 			}
 		},
@@ -148,10 +117,7 @@ const citySelectorMachine = machine({
 	actions: {
 		formSuggestsList: () => {
 			const radioArr = document.getElementsByName('country');
-			let i;
-			for (i = 0; i < radioArr.length; i++) {
-				if (radioArr[i].checked) break;
-			}
+			let i = Object.values(radioArr).findIndex((radio) => radio.checked);
 			const countryChecked = i;
 			const [context, setContext] = useContext();
 			let suggests = [];
@@ -161,13 +127,12 @@ const citySelectorMachine = machine({
 						suggests.push(item.areas[i].name);
 				else suggests.push(item.name);
 			});
-			context.suggestList = suggests;
+			setContext({suggestList: suggests});
 		},
 		applySuggestList: () => {
 			const context = useContext()[0];
 			const filter = context.filter.toUpperCase();
 			let match = false;
-			let sasa;
 			for (let i = 0; i < context.suggestList.length; i++) {
 				if (!Boolean(filter) || context.suggestList[i].toUpperCase().includes(filter)) {
 					let newLi = document.createElement('li');
@@ -183,15 +148,15 @@ const citySelectorMachine = machine({
 				newLi.innerHTML = 'Нет результатов...';
 				context.selectorList.appendChild(newLi);
 			}
-		}
+		},
+		
 	}
 })
 
 function setEventListeners() {
-	const context = useContext()[0];
-	const citySelector = context.citySelector;
-	const selectorList = context.selectorList;
-	const containerRadios = context.containerRadios;
+	const citySelector = this.context.citySelector;
+	const selectorList = this.context.selectorList;
+	const containerRadios = this.context.containerRadios;
 
 	document.querySelector('body').addEventListener('click', () => {
 		selectorList.style.display = 'none';
@@ -260,5 +225,37 @@ function setEventListeners() {
 	});
 }
 
-citySelectorMachine.transition('GETDATA', {url: 'https://api.hh.ru/areas'});
-setEventListeners.call(citySelectorMachine);
+
+let xhr = new XMLHttpRequest();
+xhr.open('GET', 'https://api.hh.ru/areas');
+xhr.send();
+
+xhr.onload = function() {
+	if (xhr.status != 200) {
+		alert(xhr.status + ': ' + xhr.statusText);
+	} else {
+		let initialContext = {
+			citySelector: document.querySelector('.modal-form_city_selector'),
+			selectorList: document.querySelector('.modal-form_selector_list'),
+			containerRadios: document.querySelector('.modal-form_country_radios'),
+			focusElement: document.querySelector('.modal-form_selector_list'),
+			data : []
+		};
+		initialContext.data = JSON.parse(xhr.responseText);
+		let newLabel;
+		for (let i = 0; i < initialContext.data.length; i++) {
+			newLabel = document.createElement('label');
+			newLabel.setAttribute('for', i);
+			newLabel.setAttribute('style', 'width: 200px')
+			newLabel.innerHTML = '<input type="radio" name="country"'
+				+ 'id=' + i + ' /> ' + initialContext.data[i].name;
+			initialContext.containerRadios.appendChild(newLabel);
+		}
+		let radioBtn = document.getElementById('0');
+		radioBtn.setAttribute('checked', 'checked');
+		citySelectorMachine.transition('GETDATA', initialContext);
+		setEventListeners.call(citySelectorMachine);
+	}
+};
+
+
