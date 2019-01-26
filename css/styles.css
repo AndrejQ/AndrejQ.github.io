@@ -1,0 +1,78 @@
+.modal-wrapper {
+	min-height: 900px;
+	background: linear-gradient(180deg, rgba(200, 200, 200), rgba(230, 230, 230));
+	background-size: cover;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+.modal {
+	display: flex;
+	justify-content: space-around;
+	margin-top: 30px;
+}
+
+.modal-form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 500px;
+	height: 650px;
+	padding: 20px;
+	border: solid 2px #ddd;
+	border-radius: 2px;
+	background: #fff;
+}
+
+.modal-form_city_selector {
+	width: 350px;
+	height: 50px;
+	padding-left: 10px;
+	border: solid 2px #ddd;
+	border-radius: 2px;
+	font-size: 15px;
+	text-transform: capitalize;
+}
+
+.modal-form_city_selector:focus {
+	outline: solid 2px #bbb;
+}
+
+.modal-form_selector_list {
+	display: none;
+	width: 350px;
+	max-height: 200px;
+	padding: 5px;
+	margin: 0;
+	border: solid 2px #ddd;
+	border-top: none;
+	border-radius: 0 0 5px 5px;
+	background: #fff;
+	position: absolute;
+	overflow: auto;
+}
+
+.modal-form_selector_list_el {
+	font-size: 18px;
+}
+
+.modal-form_selector_list_el:focus {
+	outline: none;
+	color: #fff;
+	background: #bbb;
+}
+
+.modal-form_country_radios {
+	display: flex;
+	flex-direction: column;
+	width: 350px;
+	margin: 20px 0;
+}
+
+.modal-form_symbol {
+	width: 200px;
+	height: 200px;
+}
